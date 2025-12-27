@@ -3,195 +3,242 @@ import { GradientTitle } from "@/components/GradientTitle";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { GlowButton } from "@/components/ui/GlowButton";
 import { TabsNav, Tab } from "@/components/ui/TabsNav";
-import { FeatureCard } from "@/components/FeatureCard";
-import {
-  Crosshair,
-  Settings,
-  BarChart3,
-  Zap,
-  Shield,
-  Users,
-  Rocket,
-  Target,
-} from "lucide-react";
+import { FeatureToggle } from "@/components/FeatureToggle";
+import { Globe, User, Zap, Users, Timer, Target, Shield, Settings } from "lucide-react";
 
-const tabs: Tab[] = [
-  { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
-  { id: "features", label: "Features", icon: <Zap className="w-4 h-4" /> },
-  { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
-];
+type Region = "NA" | "EU" | "AP" | "KR" | "TEST";
 
-const features = [
-  {
-    icon: <Crosshair className="w-6 h-6" />,
-    title: "Precision Tracking",
-    description: "Advanced aim analytics and performance tracking for competitive improvement.",
-  },
-  {
-    icon: <Shield className="w-6 h-6" />,
-    title: "Secure & Private",
-    description: "Your data stays protected with enterprise-grade security measures.",
-  },
-  {
-    icon: <Target className="w-6 h-6" />,
-    title: "Smart Analysis",
-    description: "AI-powered insights to identify weaknesses and optimize your gameplay.",
-  },
-  {
-    icon: <Users className="w-6 h-6" />,
-    title: "Team Integration",
-    description: "Seamless collaboration tools for coordinated team performance.",
-  },
+const regions: { id: Region; label: string; description: string }[] = [
+  { id: "NA", label: "North America", description: "US West, US East, Brazil" },
+  { id: "EU", label: "Europe", description: "EU West, EU Nordic, Turkey" },
+  { id: "AP", label: "Asia Pacific", description: "SEA, Japan, OCE" },
+  { id: "KR", label: "Korea", description: "Korea Server" },
+  { id: "TEST", label: "Test Mode", description: "Offline Testing" },
 ];
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [activeTab, setActiveTab] = useState("agent");
 
-  return (
-    <div className="min-h-screen gradient-flow">
-      {/* Main container */}
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-12">
-        {/* Header */}
-        <header className="mb-12">
-          <GradientTitle
-            title="val helper by xona"
-            subtitle="Your ultimate companion for competitive gaming"
-          />
-        </header>
+  // Feature states
+  const [features, setFeatures] = useState({
+    autoLock: false,
+    instantLock: false,
+    playerList: false,
+    spikeTimer: false,
+    dodgeTimer: false,
+    rankReveal: false,
+  });
 
-        {/* Navigation Tabs */}
-        <div className="flex justify-center mb-10">
-          <TabsNav
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
-        </div>
+  const toggleFeature = (key: keyof typeof features) => {
+    setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
-        {/* Tab Content */}
-        <div className="animate-fade-in">
-          {activeTab === "overview" && (
-            <div className="space-y-8">
-              {/* Stats Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <GlassCard className="text-center animate-slide-up" style={{ animationDelay: "0ms" }}>
-                  <div className="text-3xl font-display font-bold gradient-text">98%</div>
-                  <div className="text-muted-foreground text-sm mt-1">Accuracy Rate</div>
-                </GlassCard>
-                <GlassCard className="text-center animate-slide-up" style={{ animationDelay: "100ms" }}>
-                  <div className="text-3xl font-display font-bold gradient-text">1.2M+</div>
-                  <div className="text-muted-foreground text-sm mt-1">Active Users</div>
-                </GlassCard>
-                <GlassCard className="text-center animate-slide-up" style={{ animationDelay: "200ms" }}>
-                  <div className="text-3xl font-display font-bold gradient-text">24/7</div>
-                  <div className="text-muted-foreground text-sm mt-1">Live Support</div>
-                </GlassCard>
-              </div>
+  const handleConnect = () => {
+    if (selectedRegion) {
+      setIsConnected(true);
+    }
+  };
 
-              {/* Main Content Card */}
-              <GlassCard glow className="animate-slide-up" style={{ animationDelay: "300ms" }}>
-                <div className="flex flex-col md:flex-row items-center gap-8">
-                  <div className="flex-1">
-                    <h2 className="font-display text-2xl font-bold mb-4 text-foreground">
-                      Elevate Your Game
-                    </h2>
-                    <p className="text-muted-foreground leading-relaxed mb-6">
-                      Val Helper provides real-time analytics, performance tracking, and intelligent
-                      insights to help you climb the ranks. Whether you're a casual player or
-                      aspiring pro, our tools adapt to your playstyle.
+  const handleDisconnect = () => {
+    setIsConnected(false);
+    setSelectedRegion(null);
+  };
+
+  const tabs: Tab[] = [
+    { id: "agent", label: "Agent", icon: <Target size={16} /> },
+    { id: "match", label: "Match", icon: <Users size={16} /> },
+    { id: "utility", label: "Utility", icon: <Zap size={16} /> },
+    { id: "settings", label: "Settings", icon: <Settings size={16} /> },
+  ];
+
+  // Region Selection Screen
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen gradient-flow flex items-center justify-center p-6">
+        <GlassCard className="w-full max-w-md p-8">
+          <div className="text-center mb-8">
+            <GradientTitle title="val helper" subtitle="by xona" />
+          </div>
+
+          <div className="space-y-3 mb-6">
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              Select your region to connect
+            </p>
+            {regions.map((region) => (
+              <button
+                key={region.id}
+                onClick={() => setSelectedRegion(region.id)}
+                className={`w-full p-4 rounded-xl border transition-all duration-300 text-left ${
+                  selectedRegion === region.id
+                    ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                    : "border-border/50 bg-muted/20 hover:border-primary/50 hover:bg-muted/40"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Globe
+                    size={20}
+                    className={
+                      selectedRegion === region.id
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    }
+                  />
+                  <div>
+                    <p className="font-medium text-foreground">{region.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {region.description}
                     </p>
-                    <div className="flex flex-wrap gap-3">
-                      <GlowButton variant="gradient" size="lg">
-                        <Rocket className="w-5 h-5" />
-                        Get Started
-                      </GlowButton>
-                      <GlowButton variant="outline" size="lg">
-                        Learn More
-                      </GlowButton>
-                    </div>
-                  </div>
-                  <div className="w-48 h-48 rounded-2xl bg-gradient-to-br from-primary/30 via-accent/30 to-secondary/30 flex items-center justify-center">
-                    <Crosshair className="w-24 h-24 text-primary pulse-soft" />
                   </div>
                 </div>
-              </GlassCard>
+              </button>
+            ))}
+          </div>
+
+          <GlowButton
+            variant="gradient"
+            className="w-full"
+            onClick={handleConnect}
+            disabled={!selectedRegion}
+          >
+            Connect
+          </GlowButton>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  // Main UI
+  return (
+    <div className="min-h-screen gradient-flow p-6">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-xl font-bold gradient-text">val helper</h1>
+              <p className="text-xs text-muted-foreground">by xona</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-muted-foreground">
+                    {selectedRegion === "TEST" ? "TEST MODE" : selectedRegion}
+                  </span>
+                </div>
+                <p className="text-xs text-foreground flex items-center gap-1">
+                  <User size={12} />
+                  {selectedRegion === "TEST"
+                    ? "TestUser#0000"
+                    : "Connected"}
+                </p>
+              </div>
+              <GlowButton variant="outline" size="sm" onClick={handleDisconnect}>
+                Disconnect
+              </GlowButton>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Navigation */}
+        <TabsNav
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        {/* Content */}
+        <GlassCard className="p-6">
+          {activeTab === "agent" && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Agent Selection
+              </h2>
+              <FeatureToggle
+                icon={<Target size={20} />}
+                label="Auto-Lock Agent"
+                description="Automatically lock in your selected agent"
+                enabled={features.autoLock}
+                onToggle={() => toggleFeature("autoLock")}
+              />
+              <FeatureToggle
+                icon={<Zap size={20} />}
+                label="Instant Lock"
+                description="Lock agent as fast as possible"
+                enabled={features.instantLock}
+                onToggle={() => toggleFeature("instantLock")}
+              />
             </div>
           )}
 
-          {activeTab === "features" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {features.map((feature, index) => (
-                <FeatureCard
-                  key={feature.title}
-                  icon={feature.icon}
-                  title={feature.title}
-                  description={feature.description}
-                  delay={index * 100}
-                />
-              ))}
+          {activeTab === "match" && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Match Tools
+              </h2>
+              <FeatureToggle
+                icon={<Users size={20} />}
+                label="Player List"
+                description="View players in current match"
+                enabled={features.playerList}
+                onToggle={() => toggleFeature("playerList")}
+              />
+              <FeatureToggle
+                icon={<Shield size={20} />}
+                label="Rank Reveal"
+                description="Show player ranks in lobby"
+                enabled={features.rankReveal}
+                onToggle={() => toggleFeature("rankReveal")}
+              />
+            </div>
+          )}
+
+          {activeTab === "utility" && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Utility Features
+              </h2>
+              <FeatureToggle
+                icon={<Timer size={20} />}
+                label="Spike Timer"
+                description="Overlay timer for spike plant/defuse"
+                enabled={features.spikeTimer}
+                onToggle={() => toggleFeature("spikeTimer")}
+              />
+              <FeatureToggle
+                icon={<Timer size={20} />}
+                label="Dodge Timer"
+                description="Countdown timer for queue dodges"
+                enabled={features.dodgeTimer}
+                onToggle={() => toggleFeature("dodgeTimer")}
+              />
             </div>
           )}
 
           {activeTab === "settings" && (
-            <GlassCard glow className="animate-slide-up">
-              <h2 className="font-display text-xl font-bold mb-6 text-foreground">
-                Customize Your Experience
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Settings
               </h2>
-              <div className="space-y-6">
-                {/* Settings Items */}
-                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
-                  <div>
-                    <div className="font-medium text-foreground">Notifications</div>
-                    <div className="text-sm text-muted-foreground">Receive alerts for match updates</div>
-                  </div>
-                  <div className="w-12 h-6 rounded-full bg-primary/30 relative cursor-pointer">
-                    <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-primary shadow-glow-sm" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
-                  <div>
-                    <div className="font-medium text-foreground">Dark Mode</div>
-                    <div className="text-sm text-muted-foreground">Enable dark theme interface</div>
-                  </div>
-                  <div className="w-12 h-6 rounded-full bg-primary/30 relative cursor-pointer">
-                    <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-primary shadow-glow-sm" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border/50">
-                  <div>
-                    <div className="font-medium text-foreground">Auto-sync</div>
-                    <div className="text-sm text-muted-foreground">Automatically sync match data</div>
-                  </div>
-                  <div className="w-12 h-6 rounded-full bg-muted relative cursor-pointer">
-                    <div className="absolute left-1 top-1 w-4 h-4 rounded-full bg-muted-foreground/50" />
-                  </div>
-                </div>
-              </div>
-            </GlassCard>
-          )}
-        </div>
-
-        {/* Button Showcase */}
-        <div className="mt-12">
-          <GlassCard className="animate-slide-up" style={{ animationDelay: "400ms" }}>
-            <h3 className="font-display text-lg font-semibold mb-4 text-foreground">
-              Button Variants
-            </h3>
-            <div className="flex flex-wrap gap-3">
-              <GlowButton variant="default">Primary</GlowButton>
-              <GlowButton variant="secondary">Secondary</GlowButton>
-              <GlowButton variant="accent">Accent</GlowButton>
-              <GlowButton variant="outline">Outline</GlowButton>
-              <GlowButton variant="ghost">Ghost</GlowButton>
-              <GlowButton variant="gradient">Gradient</GlowButton>
+              <p className="text-muted-foreground text-sm">
+                Settings panel coming soon...
+              </p>
             </div>
-          </GlassCard>
-        </div>
+          )}
+        </GlassCard>
 
-        {/* Footer */}
-        <footer className="mt-16 text-center text-muted-foreground text-sm">
-          <p>© 2024 Val Helper by Xona. All rights reserved.</p>
-        </footer>
+        {/* Status Bar */}
+        <GlassCard className="p-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              Active Features:{" "}
+              {Object.values(features).filter(Boolean).length}
+            </span>
+            <span>v1.0.0</span>
+          </div>
+        </GlassCard>
       </div>
     </div>
   );
